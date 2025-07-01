@@ -1,0 +1,46 @@
+{
+    "manifest_version": 3,
+    "name": "Reachin - AI Cold Outreach Generator",
+    "version": "1.0.0",
+    "description": "AI-powered cold outreach generator with LinkedIn profile scraping and personalized email/message creation using Gemini AI",
+    "permissions": [
+      "storage",
+      "activeTab",
+      "scripting"
+    ],
+    "host_permissions": [
+      "https://*.linkedin.com/*",
+      "https://*.generativelanguage.googleapis.com/*",
+      "<all_urls>"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["scraper.js"],
+        "css": ["style.css"],
+        "run_at": "document_end"
+      }
+    ],
+    "action": {
+      "default_popup": "popup.html",
+      "default_title": "Reachin Settings",
+      "default_icon": {
+        "16": "images/icon16.png",
+        "48": "images/icon48.png"
+      }
+    },
+    "icons": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png"
+    },
+    "web_accessible_resources": [
+      {
+        "resources": ["style.css"],
+        "matches": ["<all_urls>"]
+      }
+    ]
+  }
+  

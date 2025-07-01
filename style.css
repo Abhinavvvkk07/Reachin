@@ -1,0 +1,190 @@
+#diy-grammar-tooltip {
+    position: absolute;
+    background: #fafbfc;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    z-index: 10000;
+    min-width: 340px;
+    max-width: 420px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    color: #222;
+    overflow: visible;
+    padding: 0;
+    display: none;
+}
+
+.tooltip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f5f6fa;
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 12px 12px 0 0;
+    padding: 10px 16px 8px 16px;
+    font-weight: 600;
+    color: #444;
+}
+
+.tooltip-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: #888;
+    cursor: pointer;
+    margin-left: 8px;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.2s;
+}
+.tooltip-close:hover {
+    color: #d9534f;
+}
+
+.tooltip-pointer {
+    position: absolute;
+    top: -12px;
+    left: 32px;
+    width: 24px;
+    height: 12px;
+    overflow: hidden;
+}
+.tooltip-pointer::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 6px;
+    width: 12px;
+    height: 12px;
+    background: #fafbfc;
+    border-left: 1px solid #e0e0e0;
+    border-top: 1px solid #e0e0e0;
+    transform: rotate(45deg);
+    box-shadow: -2px -2px 8px rgba(0,0,0,0.04);
+}
+
+.suggestion-text {
+    padding: 18px 18px 8px 18px;
+    background: transparent;
+    font-size: 15px;
+    color: #222;
+    line-height: 1.6;
+}
+
+.tooltip-buttons {
+    padding: 10px 18px 16px 18px;
+    background: transparent;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.tooltip-button {
+    padding: 7px 18px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.tooltip-button.accept {
+    background: #28a745;
+    color: #fff;
+    border-color: #28a745;
+}
+.tooltip-button.accept:hover {
+    background: #218838;
+}
+.tooltip-button.dismiss {
+    background: #f0f0f0;
+    color: #333;
+    border-color: #d1d1d1;
+}
+.tooltip-button.dismiss:hover {
+    background: #e0e0e0;
+}
+
+/* Error Tooltip Style */
+.error-tooltip {
+    padding: 12px !important;
+    background-color: #fff3cd !important;
+    border: 1px solid #ffeeba !important;
+    color: #856404;
+}
+
+.error-message {
+    padding: 8px 0;
+    line-height: 1.4;
+}
+
+/* --- Inline Correction Red Underline --- */
+.mistake {
+    text-decoration: underline;
+    text-decoration-color: #d9534f;
+    text-decoration-style: wavy;
+    text-decoration-thickness: 2px;
+    background-color: rgba(217, 83, 79, 0.08);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.15s;
+}
+.mistake:hover {
+    background: #ffeaea;
+}
+
+/* --- Mini Tooltip for Inline Corrections --- */
+#diy-grammar-mini-tooltip {
+    position: absolute;
+    display: none;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    font-size: 12px;
+    max-width: 200px;
+    z-index: 10001;
+}
+
+.mini-suggestion {
+    margin-bottom: 6px;
+    color: #333;
+}
+
+.mini-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.mini-accept, .mini-dismiss {
+    padding: 2px 6px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 10px;
+}
+
+.mini-accept:hover {
+    background: #28a745;
+    color: white;
+}
+
+.mini-dismiss:hover {
+    background: #dc3545;
+    color: white;
+}
+
+span.mistake {
+    background-color: transparent;
+    border-bottom: 2px solid #dc3545;
+    cursor: pointer;
+    position: relative;
+}
+
+span.mistake:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+}

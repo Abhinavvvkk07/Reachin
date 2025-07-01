@@ -1,0 +1,146 @@
+<!-- popup.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DIY Grammar Guard Settings</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            width: 350px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        h4 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #444;
+            font-size: 14px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="password"], input[type="text"] {
+            width: 95%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        textarea {
+            width: 95%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        button {
+            padding: 8px 12px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.secondary {
+            background-color: #6c757d;
+        }
+        button.secondary:hover {
+            background-color: #545b62;
+        }
+        #status {
+            margin-top: 10px;
+            color: green;
+            font-weight: bold;
+            text-align: center;
+            font-size: 12px;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        .section:last-child {
+            border-bottom: none;
+        }
+        .info-text {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+        .feature-highlight {
+            background: #e3f2fd;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="section">
+        <h3>API Settings</h3>
+        <label for="apiKey">Gemini API Key:</label>
+        <input type="password" id="apiKey" placeholder="Enter your Gemini API key">
+        <button id="saveButton">Save API Key</button>
+    </div>
+
+    <div class="section">
+        <h3>Grammar Context</h3>
+        <label for="userContext">Your Writing Context:</label>
+        <div class="info-text">This helps the AI personalize grammar suggestions for your writing style and audience.</div>
+        <textarea id="userContext" rows="3" placeholder="e.g., Professional business emails, Academic research papers, Casual social media posts"></textarea>
+        <button id="saveContextButton">Save Context</button>
+    </div>
+
+    <div class="section">
+        <h3>Cold Email Generator</h3>
+        <div class="feature-highlight">
+            ✨ <strong>New Feature:</strong> Two command types for different content!<br>
+            • <code>email: profile-tag note- instructions</code> → Formal emails<br>
+            • <code>message: profile-tag note- instructions</code> → Brief messages
+        </div>
+        
+        <h4>Your Persona</h4>
+        <div class="info-text">This information will be used to generate personalized cold emails from your perspective.</div>
+        
+        <label for="personaName">Your Name:</label>
+        <input type="text" id="personaName" placeholder="e.g., Abhinav Kumar">
+        
+        <label for="personaRole">Your Role/Title:</label>
+        <input type="text" id="personaRole" placeholder="e.g., CS undergraduate at Penn State">
+        
+        <label for="personaInterests">Your Interests:</label>
+        <input type="text" id="personaInterests" placeholder="e.g., AI/ML research, software engineering">
+        
+        <label for="personaGoals">Your Goals:</label>
+        <textarea id="personaGoals" rows="2" placeholder="e.g., Seeking internship opportunities in AI/ML development"></textarea>
+        
+        <button id="savePersonaButton">Save Persona</button>
+        <button id="viewProfilesButton" class="secondary">View Saved Profiles</button>
+    </div>
+
+    <div id="status"></div>
+    <script src="popup.js"></script>
+</body>
+</html>
