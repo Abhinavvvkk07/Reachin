@@ -1,10 +1,10 @@
 console.log("Reachin: Background script loaded for AI-powered cold outreach generation.");
 
 async function getSuggestions(text) {
-    console.log("Fetching user context and Gemini API key...");
+    console.log("Fetching Gemini API key for grammar checking...");
 
-    const settings = await chrome.storage.sync.get(['apiKey', 'userName', 'userMajor', 'userContext']);
-    const { apiKey, userName, userMajor, userContext } = settings;
+    const settings = await chrome.storage.sync.get(['apiKey']);
+    const { apiKey } = settings;
 
     if (!apiKey) {
         return { error: "Error: Gemini API Key not set. Please click the extension icon to enter your key." };
@@ -13,28 +13,26 @@ async function getSuggestions(text) {
     const modelName = "gemini-1.5-flash-latest";
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    // This prompt is now even more explicit about the expected output.
-    const systemPrompt = `You are an expert editor. Your task is to analyze the user's text.
-    You MUST provide two things in your response:
-    1.  In the "fullRewrite" field, provide a complete, polished rewrite of the entire text. The rewrite must always be based on the user's input, not just the context. Never simply repeat the context as the rewrite.
-    2.  In the "inlineCorrections" field, provide a list of ONLY short, specific corrections for individual spelling and grammar mistakes. Each correction's "original" text should be less than 5 words.
+    // Simplified prompt focused only on grammar and writing improvements
+    const systemPrompt = `You are a grammar and writing assistant. Analyze the provided text and suggest improvements.
 
-    User Context:
-    - Name: ${userName || 'Not provided'}
-    - Major/Field: ${userMajor || 'Not provided'}
-    - Resume/Skills: ${userContext || 'No context'}
+IMPORTANT: Respond with ONLY a valid JSON object in this exact format:
+{
+  "fullRewrite": "A complete, improved version of the text with better grammar and clarity",
+  "inlineCorrections": [
+    { "original": "incorrect phrase", "suggestion": "corrected phrase" }
+  ]
+}
 
-    IMPORTANT: You must respond with ONLY a valid JSON object. Do not add any commentary, explanation, or markdown formatting like \`\`\`json. The JSON object must have this exact structure:
-    {
-      "fullRewrite": "The completely rewritten, improved version of the text.",
-      "inlineCorrections": [
-        { "original": "a specific incorrect phrase", "suggestion": "the corrected phrase" }
-      ]
-    }`;
+Do not include any commentary, explanations, or markdown formatting.`;
 
     const requestBody = {
-        "contents": [{ "parts": [{ "text": systemPrompt }, { "text": "Here is the user's draft text to analyze:" }, { "text": text }] }],
-        "generationConfig": { "responseMimeType": "application/json", "temperature": 0.7 }
+        "contents": [{ "parts": [{ "text": systemPrompt }, { "text": `Text to analyze: "${text}"` }] }],
+        "generationConfig": { 
+            "responseMimeType": "application/json", 
+            "temperature": 0.3,
+            "maxOutputTokens": 800
+        }
     };
 
     console.log("Sending request to Gemini API...");
