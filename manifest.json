@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "DIY Grammar Guard",
+    "name": "Reachin",
     "version": "1.0.0",
     "description": "Grammar checker with AI-powered cold outreach generator",
     "permissions": [
@@ -26,7 +26,7 @@
     ],
     "action": {
       "default_popup": "popup.html",
-      "default_title": "DIY Grammar Guard Settings",
+      "default_title": "Reachin Settings",
       "default_icon": {
         "16": "images/icon16.png",
         "48": "images/icon48.png"

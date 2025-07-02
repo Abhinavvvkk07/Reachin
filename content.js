@@ -1,4 +1,4 @@
-console.log("DIY Grammar Guard: Content script loaded.");
+console.log("Reachin: Content script loaded.");
 
 // Add these utility functions at the top
 function escapeHtml(text) {

@@ -289,7 +289,9 @@ function scrapeLinkedInProfile() {
             '.ph5 h1',
             'h1[data-generated-suggestion-target]',
             '.artdeco-entity-lockup__title h1',
-            '.pv-top-card-profile-picture__container + div h1'
+            '.pv-top-card-profile-picture__container + div h1',
+            '.top-card-layout__title',  // New LinkedIn layout
+            '.profile-topcard-person-entity__name'  // Another new layout variant
         ];
         
         for (const selector of nameSelectors) {
@@ -306,7 +308,9 @@ function scrapeLinkedInProfile() {
             '.pv-text-details__left-panel .text-body-medium',
             '.pv-top-card-profile-picture__container + div .text-body-medium',
             '.artdeco-entity-lockup__subtitle',
-            '[data-generated-suggestion-target] + div .text-body-medium'
+            '[data-generated-suggestion-target] + div .text-body-medium',
+            '.top-card-layout__headline',  // New LinkedIn layout
+            '.profile-topcard-person-entity__headline'  // Another new layout variant
         ];
         
         for (const selector of headlineSelectors) {
@@ -957,18 +961,33 @@ async function storeProfileData(tag, profileData) {
     console.log(`[Cold Outreach] Starting storage process for tag: ${tag}`);
     console.log(`[Cold Outreach] Profile data to store:`, profileData);
     
+    // Validate input data
+    if (!tag || typeof tag !== 'string') {
+        console.error('[Cold Outreach] Invalid tag:', tag);
+        return false;
+    }
+    
+    if (!profileData || typeof profileData !== 'object') {
+        console.error('[Cold Outreach] Invalid profile data:', profileData);
+        return false;
+    }
+    
     try {
         // Check if chrome.storage is available
         if (!chrome || !chrome.storage || !chrome.storage.local) {
             console.error('[Cold Outreach] Chrome storage API not available - extension context may be invalidated');
-            return false;
+            throw new Error('Chrome storage API not available');
         }
 
         console.log(`[Cold Outreach] Chrome storage API is available`);
 
         const storageKey = `profile_${tag}`;
         const dataToStore = {
-            [storageKey]: profileData
+            [storageKey]: {
+                ...profileData,
+                _lastUpdated: new Date().toISOString(),
+                _version: '1.0.0'
+            }
         };
         
         console.log(`[Cold Outreach] Attempting to store data with key: ${storageKey}`);
@@ -977,6 +996,9 @@ async function storeProfileData(tag, profileData) {
         
         // Verify the data was stored
         const verification = await chrome.storage.local.get([storageKey]);
+        if (!verification[storageKey]) {
+            throw new Error('Storage verification failed - data not found after storage');
+        }
         console.log(`[Cold Outreach] Verification - stored data:`, verification);
         
         // Also update the list of stored profiles
@@ -995,6 +1017,9 @@ async function storeProfileData(tag, profileData) {
         
         // Final verification
         const finalCheck = await chrome.storage.local.get(['stored_profiles']);
+        if (!finalCheck.stored_profiles || !finalCheck.stored_profiles.includes(tag)) {
+            throw new Error('Final verification failed - profile not found in stored_profiles list');
+        }
         console.log(`[Cold Outreach] Final stored profiles list:`, finalCheck.stored_profiles);
         
         return true;
@@ -1006,9 +1031,12 @@ async function storeProfileData(tag, profileData) {
             name: error.name
         });
         
-        // If it's a context invalidation error, show user-friendly message
-        if (error.message && error.message.includes('Extension context invalidated')) {
-            console.log('[Cold Outreach] Extension was reloaded. Please refresh the page and try again.');
+        // If it's a context invalidation error, show user-friendly message and try fallback
+        if (error.message && (
+            error.message.includes('Extension context invalidated') ||
+            error.message.includes('Chrome storage API not available')
+        )) {
+            console.log('[Cold Outreach] Extension was reloaded or storage unavailable. Trying fallback storage...');
             
             // Store data in localStorage as fallback
             try {
@@ -1016,10 +1044,18 @@ async function storeProfileData(tag, profileData) {
                     tag: tag,
                     profileData: profileData,
                     timestamp: Date.now(),
-                    source: 'fallback'
+                    source: 'fallback',
+                    _version: '1.0.0'
                 };
                 localStorage.setItem(`scraper_fallback_${tag}`, JSON.stringify(fallbackData));
                 console.log('[Cold Outreach] Data saved to localStorage as fallback');
+                
+                // Verify fallback storage
+                const fallbackVerification = localStorage.getItem(`scraper_fallback_${tag}`);
+                if (!fallbackVerification) {
+                    throw new Error('Fallback storage verification failed');
+                }
+                
                 return true;
             } catch (localError) {
                 console.error('[Cold Outreach] LocalStorage fallback also failed:', localError);
@@ -1031,8 +1067,36 @@ async function storeProfileData(tag, profileData) {
     }
 }
 
-// Initialize scraper on page load
-function initializeScraper() {
+// Function to verify storage functionality
+async function verifyStorageFunctionality() {
+    try {
+        // Test chrome.storage.local
+        const testData = { test: 'data_' + Date.now() };
+        await chrome.storage.local.set({ 'test_key': testData });
+        const result = await chrome.storage.local.get(['test_key']);
+        
+        if (!result.test_key) {
+            throw new Error('Storage test failed - data not retrieved');
+        }
+        
+        // Clean up test data
+        await chrome.storage.local.remove(['test_key']);
+        console.log('[Cold Outreach] Storage functionality verified');
+        return true;
+    } catch (error) {
+        console.error('[Cold Outreach] Storage functionality test failed:', error);
+        return false;
+    }
+}
+
+// Add storage check to initialization
+async function initializeScraper() {
+    // Verify storage functionality first
+    const storageWorks = await verifyStorageFunctionality();
+    if (!storageWorks) {
+        console.error('[Cold Outreach] Storage functionality not working - some features may be limited');
+    }
+    
     // Wait for page to stabilize
     setTimeout(() => {
         if (shouldShowScrapingButton()) {
@@ -1191,11 +1255,30 @@ ${profileData.experience.map(exp => `- ${exp.title} at ${exp.company}`).join('\n
 
 ${userNote ? `SPECIAL INSTRUCTIONS: ${userNote}` : ''}
 
-Write a concise, engaging cold email (2-3 paragraphs) that:
-1. References something specific from their background
-2. Explains why you're reaching out
-3. Suggests a brief call or meeting
-4. Sounds authentic and not templated
+Generate both a subject line and email body. Format your response EXACTLY like this, including all line breaks:
+SUBJECT: [Your subject line here]
+---
+Dear [Name],
+
+[First paragraph introducing yourself and mentioning something specific from their background]
+
+[Second paragraph explaining why you're reaching out and what you hope to learn]
+
+[Final paragraph with a clear call to action - suggest a specific time frame for meeting]
+
+Best regards,
+${persona.name}
+${persona.university}
+[Your LinkedIn Profile URL]
+
+The subject line should be concise and specific to the recipient's background.
+The email body should:
+1. Use proper spacing between paragraphs (double line breaks)
+2. Reference something specific from their background
+3. Explain why you're reaching out
+4. Suggest a brief call or meeting
+5. Sound authentic and not templated
+6. Include proper signature with line breaks
 
 Email:`;
 
@@ -1222,6 +1305,107 @@ Email:`;
     } catch (error) {
         console.error('[Cold Outreach] Email generation failed:', error);
         throw error;
+    }
+}
+
+// Process email command in text field
+async function processEmailCommand(element, commandInfo) {
+    if (isGeneratingEmail) {
+        console.log('[Cold Outreach] Email generation already in progress');
+        return;
+    }
+
+    isGeneratingEmail = true;
+    lastEmailCommand = commandInfo;
+
+    try {
+        console.log('[Cold Outreach] Processing email command:', commandInfo);
+
+        // Show loading state
+        showLoadingState(element, commandInfo, 'email');
+
+        // Get profile data
+        const profileKey = `profile_${commandInfo.tag}`;
+        const result = await chrome.storage.local.get([profileKey]);
+        const profileData = result[profileKey];
+
+        if (!profileData) {
+            throw new Error(`Profile not found for tag: ${commandInfo.tag}`);
+        }
+
+        // Load persona
+        const persona = await loadAbhinavPersona();
+        if (!persona) {
+            throw new Error('Failed to load persona data');
+        }
+
+        // Generate email content
+        const generatedContent = await generateColdEmail(profileData, persona, commandInfo.note);
+        
+        // Check if we're in Gmail compose
+        const isGmail = window.location.hostname === 'mail.google.com';
+        // Check if we're in LinkedIn
+        const isLinkedIn = window.location.hostname.includes('linkedin.com');
+        
+        if (isGmail) {
+            // Gmail-specific handling
+            const parts = generatedContent.split('---');
+            if (parts.length === 2) {
+                const subject = parts[0].replace('SUBJECT:', '').trim();
+                const body = parts[1].trim();
+                
+                // Find Gmail subject input
+                const subjectInput = document.querySelector('input[name="subjectbox"]');
+                if (subjectInput) {
+                    subjectInput.value = subject;
+                    subjectInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                
+                // Format body with proper line breaks for Gmail
+                const formattedBody = body
+                    .replace(/\n\n/g, '<div><br></div>')
+                    .replace(/\n/g, '<div>')
+                    .replace(/Best regards,/, '<div><br></div>Best regards,');
+                
+                if (element.getAttribute('contenteditable') === 'true') {
+                    element.innerHTML = formattedBody;
+                } else {
+                    replaceCommand(element, commandInfo, body);
+                }
+            } else {
+                replaceCommand(element, commandInfo, generatedContent);
+            }
+        } else if (isLinkedIn) {
+            // LinkedIn-specific handling
+            // Clear any placeholder text
+            if (element.getAttribute('contenteditable') === 'true') {
+                element.innerHTML = '';
+                // Force focus to clear placeholder
+                element.focus();
+                // Insert our content with proper formatting
+                const formattedContent = generatedContent.split('---')[1].trim()
+                    .replace(/\n\n/g, '<div><br></div>')
+                    .replace(/\n/g, '<div>')
+                    .replace(/Best regards,/, '<div><br></div>Best regards,');
+                element.innerHTML = formattedContent;
+            } else if (element.tagName.toLowerCase() === 'textarea' || element.tagName.toLowerCase() === 'input') {
+                // For regular input fields
+                element.value = '';
+                element.focus();
+                replaceCommand(element, commandInfo, generatedContent.split('---')[1].trim());
+            }
+            // Dispatch input event to ensure LinkedIn registers the change
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+        } else {
+            // For non-Gmail/LinkedIn, keep the full format
+            replaceCommand(element, commandInfo, generatedContent);
+        }
+
+    } catch (error) {
+        console.error('[Cold Outreach] Email command processing failed:', error);
+        showError(element, commandInfo, error.message);
+    } finally {
+        isGeneratingEmail = false;
     }
 }
 
@@ -1287,53 +1471,6 @@ Message:`;
     }
 }
 
-// Process email command in text field
-async function processEmailCommand(element, commandInfo) {
-    if (isGeneratingEmail) {
-        console.log('[Cold Outreach] Email generation already in progress');
-        return;
-    }
-
-    isGeneratingEmail = true;
-    lastEmailCommand = commandInfo;
-
-    try {
-        console.log('[Cold Outreach] Processing email command:', commandInfo);
-
-        // Show loading state
-        showLoadingState(element, commandInfo, 'email');
-
-        // Load persona
-        const persona = await loadAbhinavPersona();
-        if (!persona) {
-            throw new Error('Could not load user persona');
-        }
-
-        // Fetch profile data
-        const profileKey = `profile_${commandInfo.tag}`;
-        const result = await chrome.storage.local.get([profileKey]);
-        const profileData = result[profileKey];
-
-        if (!profileData) {
-            throw new Error(`Profile '${commandInfo.tag}' not found. Available profiles: ${await getAvailableProfileTags()}`);
-        }
-
-        // Generate email
-        const generatedEmail = await generateColdEmail(profileData, persona, commandInfo.note);
-
-        // Replace command with generated email
-        replaceCommand(element, commandInfo, generatedEmail);
-
-        console.log('[Cold Outreach] Email generated and inserted successfully');
-
-    } catch (error) {
-        console.error('[Cold Outreach] Email command processing failed:', error);
-        showError(element, commandInfo, error.message);
-    } finally {
-        isGeneratingEmail = false;
-    }
-}
-
 // Process message command in text field
 async function processMessageCommand(element, commandInfo) {
     if (isGeneratingMessage) {
@@ -1350,28 +1487,47 @@ async function processMessageCommand(element, commandInfo) {
         // Show loading state
         showLoadingState(element, commandInfo, 'message');
 
-        // Load persona
-        const persona = await loadAbhinavPersona();
-        if (!persona) {
-            throw new Error('Could not load user persona');
-        }
-
-        // Fetch profile data
+        // Get profile data
         const profileKey = `profile_${commandInfo.tag}`;
         const result = await chrome.storage.local.get([profileKey]);
         const profileData = result[profileKey];
 
         if (!profileData) {
-            throw new Error(`Profile '${commandInfo.tag}' not found. Available profiles: ${await getAvailableProfileTags()}`);
+            throw new Error(`Profile not found for tag: ${commandInfo.tag}`);
         }
 
-        // Generate message
-        const generatedMessage = await generateColdMessage(profileData, persona, commandInfo.note);
+        // Load persona
+        const persona = await loadAbhinavPersona();
+        if (!persona) {
+            throw new Error('Failed to load persona data');
+        }
 
-        // Replace command with generated message
-        replaceCommand(element, commandInfo, generatedMessage);
-
-        console.log('[Cold Outreach] Message generated and inserted successfully');
+        // Generate message content
+        const generatedContent = await generateColdMessage(profileData, persona, commandInfo.note);
+        
+        // Check if we're in LinkedIn
+        const isLinkedIn = window.location.hostname.includes('linkedin.com');
+        if (isLinkedIn) {
+            // Clear any placeholder text first
+            if (element.getAttribute('contenteditable') === 'true') {
+                element.innerHTML = '';
+                element.focus();
+                // Format content for LinkedIn
+                const formattedContent = generatedContent
+                    .replace(/\n\n/g, '<div><br></div>')
+                    .replace(/\n/g, '<div>');
+                element.innerHTML = formattedContent;
+            } else if (element.tagName.toLowerCase() === 'textarea' || element.tagName.toLowerCase() === 'input') {
+                element.value = '';
+                element.focus();
+                replaceCommand(element, commandInfo, generatedContent);
+            }
+            // Ensure LinkedIn registers the change
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+        } else {
+            // For non-LinkedIn platforms
+            replaceCommand(element, commandInfo, generatedContent);
+        }
 
     } catch (error) {
         console.error('[Cold Outreach] Message command processing failed:', error);
